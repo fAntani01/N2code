@@ -1,0 +1,103 @@
+[2026-07-22 09:44:01] [INFO] [Controller] Beginning System Setup Initialization
+[2026-07-22 09:44:01] [INFO] [Controller] Connecting to VNA at GPIB0::20::INSTR...
+[2026-07-22 09:44:01] [INFO] [FakeVNA] Connected (fake) at GPIB0::20::INSTR
+[2026-07-22 09:44:01] [INFO] [Controller] Power Supply not connected: port not specified
+[2026-07-22 09:44:01] [INFO] [Controller] Connecting to 3-Axial Field Sensor...
+[2026-07-22 09:44:01] [INFO] [FakeSensor] Initialized mock sensor on configuration port MOCK_PORT
+[2026-07-22 09:44:02] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-22 09:44:02] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-22 09:44:02] [INFO] [Controller] Opening DAQ Task profile: Dev1...
+[2026-07-22 09:44:02] [INFO] [FakeDAQ] Initialised — device=Dev1, channels=[0, 1, 2, 3, 4, 5, 6, 7]
+[2026-07-22 09:44:02] [INFO] [Controller] System Configuration Complete. Hardware Ready.
+[2026-07-22 09:44:13] [INFO] [Controller] Setup Measurement Parameters
+[2026-07-22 09:44:13] [INFO] [FakeVNA] Sweep configured: 1.000-2.000 GHz, 100 pts, params=['S21']
+[2026-07-22 09:44:13] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test2
+[2026-07-22 09:44:13] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:44:13] [INFO] [Controller] Updating voltages
+[2026-07-22 09:44:13] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.03237233  1.27893936 -0.46390067]
+[2026-07-22 09:44:14] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test2
+[2026-07-22 09:44:14] [INFO] [GUI] Measurement completed.
+[2026-07-22 09:44:26] [INFO] [Controller] Setup Measurement Parameters
+[2026-07-22 09:44:26] [INFO] [FakeVNA] Sweep configured: 1.000-2.000 GHz, 100 pts, params=['S21', 'S31']
+[2026-07-22 09:44:26] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test2ì3
+[2026-07-22 09:44:26] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:44:26] [INFO] [Controller] Updating voltages
+[2026-07-22 09:44:26] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.03988098  1.21888396 -0.45167846]
+[2026-07-22 09:44:29] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test2ì3
+[2026-07-22 09:44:29] [INFO] [GUI] Measurement completed.
+[2026-07-22 09:46:00] [INFO] [Controller] Setup Measurement Parameters
+[2026-07-22 09:46:00] [INFO] [FakeVNA] Sweep configured: 1.000-2.000 GHz, 100 pts, params=['S21']
+[2026-07-22 09:46:12] [INFO] [Controller] Setup Measurement Parameters
+[2026-07-22 09:46:12] [INFO] [FakeVNA] Sweep configured: 1.000-2.000 GHz, 100 pts, params=['S21']
+[2026-07-22 09:46:12] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter0
+[2026-07-22 09:46:12] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:12] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:12] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [ 9.61860760e-04  1.22166260e+00 -4.61404035e-01]
+[2026-07-22 09:46:13] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter0
+[2026-07-22 09:46:13] [INFO] [Training] iter 0000 | score: 0.076965 | optimizer: {}
+[2026-07-22 09:46:13] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter1
+[2026-07-22 09:46:13] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:13] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:13] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.02749393  1.20705    -0.44230762]
+[2026-07-22 09:46:14] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter1
+[2026-07-22 09:46:14] [INFO] [DirectSearch] No improvement on channel 7 | score: 0.071520
+[2026-07-22 09:46:14] [INFO] [Training] iter 0001 | score: 0.076965 | optimizer: {'tested_config': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 40.0], 'current_channel': 7, 'round_progress': '1/8'}
+[2026-07-22 09:46:14] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter2
+[2026-07-22 09:46:14] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:14] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:14] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [ 0.03630071  1.26487406 -0.45146292]
+[2026-07-22 09:46:15] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter2
+[2026-07-22 09:46:15] [INFO] [DirectSearch] Improved — channel 6: 0.0 -> 50.0 | score: 0.079372
+[2026-07-22 09:46:15] [INFO] [Training] iter 0002 | score: 0.079372 | optimizer: {'tested_config': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 50.0, 0.0], 'current_channel': 6, 'round_progress': '2/8'}
+[2026-07-22 09:46:15] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter3
+[2026-07-22 09:46:15] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:15] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:15] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.03557694  1.25597638 -0.43446967]
+[2026-07-22 09:46:16] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter3
+[2026-07-22 09:46:16] [INFO] [DirectSearch] Improved — channel 1: 0.0 -> 50.0 | score: 0.079801
+[2026-07-22 09:46:16] [INFO] [Training] iter 0003 | score: 0.079801 | optimizer: {'tested_config': [0.0, 50.0, 0.0, 0.0, 0.0, 0.0, 50.0, 0.0], 'current_channel': 1, 'round_progress': '3/8'}
+[2026-07-22 09:46:16] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter4
+[2026-07-22 09:46:16] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:16] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:16] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [ 0.04187366  1.26257508 -0.46934782]
+[2026-07-22 09:46:17] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter4
+[2026-07-22 09:46:17] [INFO] [DirectSearch] No improvement on channel 4 | score: 0.077891
+[2026-07-22 09:46:17] [INFO] [Training] iter 0004 | score: 0.079801 | optimizer: {'tested_config': [0.0, 50.0, 0.0, 0.0, 10.0, 0.0, 50.0, 0.0], 'current_channel': 4, 'round_progress': '4/8'}
+[2026-07-22 09:46:17] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter5
+[2026-07-22 09:46:17] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:17] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:17] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.00355705  1.24695786 -0.46998849]
+[2026-07-22 09:46:18] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter5
+[2026-07-22 09:46:18] [INFO] [DirectSearch] No improvement on channel 0 | score: 0.074357
+[2026-07-22 09:46:18] [INFO] [Training] iter 0005 | score: 0.079801 | optimizer: {'tested_config': [30.0, 50.0, 0.0, 0.0, 0.0, 0.0, 50.0, 0.0], 'current_channel': 0, 'round_progress': '5/8'}
+[2026-07-22 09:46:18] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter6
+[2026-07-22 09:46:18] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:18] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:18] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.01320112  1.20277649 -0.45255529]
+[2026-07-22 09:46:19] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter6
+[2026-07-22 09:46:19] [INFO] [DirectSearch] No improvement on channel 5 | score: 0.077694
+[2026-07-22 09:46:19] [INFO] [Training] iter 0006 | score: 0.079801 | optimizer: {'tested_config': [0.0, 50.0, 0.0, 0.0, 0.0, 40.0, 50.0, 0.0], 'current_channel': 5, 'round_progress': '6/8'}
+[2026-07-22 09:46:19] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter7
+[2026-07-22 09:46:19] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:19] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:19] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.03460431  1.23727992 -0.44371762]
+[2026-07-22 09:46:20] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter7
+[2026-07-22 09:46:20] [INFO] [DirectSearch] No improvement on channel 3 | score: 0.074096
+[2026-07-22 09:46:20] [INFO] [Training] iter 0007 | score: 0.079801 | optimizer: {'tested_config': [0.0, 50.0, 0.0, 60.0, 0.0, 0.0, 50.0, 0.0], 'current_channel': 3, 'round_progress': '7/8'}
+[2026-07-22 09:46:20] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter8
+[2026-07-22 09:46:20] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:20] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:20] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [ 0.00764779  1.23281813 -0.45017158]
+[2026-07-22 09:46:21] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter8
+[2026-07-22 09:46:21] [INFO] [DirectSearch] No improvement on channel 2 | score: 0.073030
+[2026-07-22 09:46:21] [INFO] [DirectSearch] Round complete. Starting new round with shuffled order.
+[2026-07-22 09:46:21] [INFO] [Training] iter 0008 | score: 0.079801 | optimizer: {'tested_config': [0.0, 50.0, 60.0, 0.0, 0.0, 0.0, 50.0, 0.0], 'current_channel': 2, 'round_progress': '0/8'}
+[2026-07-22 09:46:21] [INFO] [Controller] Running measure sequence. Saving to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter9
+[2026-07-22 09:46:21] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-22 09:46:21] [INFO] [Controller] Updating voltages
+[2026-07-22 09:46:21] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.03557851  1.19599778 -0.46734702]
+[2026-07-22 09:46:22] [INFO] [Saver] Measurement files successfully saved to: C:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\test_measurements\Test98\iter9
+[2026-07-22 09:46:22] [INFO] [DirectSearch] No improvement on channel 2 | score: 0.076908
+[2026-07-22 09:46:22] [INFO] [Training] iter 0009 | score: 0.079801 | optimizer: {'tested_config': [0.0, 50.0, 40.0, 0.0, 0.0, 0.0, 50.0, 0.0], 'current_channel': 2, 'round_progress': '1/8'}
+[2026-07-22 09:46:22] [INFO] [Training] Training finished — 10 iterations completed.
+[2026-07-22 09:46:22] [INFO] [GUI] Training finished.

@@ -1,0 +1,29 @@
+[2026-07-27 10:23:24] [INFO] [GUI] Settings loaded from c:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\settings.json
+[2026-07-27 10:23:34] [INFO] [GUI] Settings saved to c:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\settings.json
+[2026-07-27 10:23:40] [INFO] [Controller] Beginning System Setup Initialization
+[2026-07-27 10:23:40] [INFO] [Controller] Connecting to VNA at GPIB0::20::INSTR...
+[2026-07-27 10:23:40] [INFO] [FakeVNA] Connected (fake) at GPIB0::20::INSTR
+[2026-07-27 10:23:40] [INFO] [Controller] Power Supply not connected: port not specified
+[2026-07-27 10:23:40] [INFO] [Controller] Connecting to 3-Axial Field Sensor...
+[2026-07-27 10:23:40] [INFO] [FakeSensor] Initialized mock sensor on configuration port MOCK_PORT
+[2026-07-27 10:23:40] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-27 10:23:40] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-27 10:23:40] [INFO] [Controller] DAQ not connected: device not specified
+[2026-07-27 10:23:40] [INFO] [Controller] System Configuration Complete. Hardware Ready.
+[2026-07-27 10:23:50] [INFO] [Controller] Executing Secure Instrument Disconnection Loop
+[2026-07-27 10:23:50] [INFO] [FakeSensor] Released connection handle safely.
+[2026-07-27 10:23:50] [INFO] [FakeVNA] Connection closed (fake).
+[2026-07-27 10:23:50] [INFO] [Controller] Shutdown routine safely completed.
+[2026-07-27 10:23:59] [INFO] [GUI] Settings saved to c:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\settings.json
+[2026-07-27 10:24:02] [INFO] [Controller] Beginning System Setup Initialization
+[2026-07-27 10:24:02] [INFO] [Controller] Connecting to VNA at GPIB0::20::INSTR...
+[2026-07-27 10:24:02] [INFO] [FakeVNA] Connected (fake) at GPIB0::20::INSTR
+[2026-07-27 10:24:02] [INFO] [Controller] Power Supply not connected: port not specified
+[2026-07-27 10:24:02] [INFO] [Controller] Connecting to 3-Axial Field Sensor...
+[2026-07-27 10:24:02] [INFO] [FakeSensor] Initialized mock sensor on configuration port MOCK_PORT
+[2026-07-27 10:24:02] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-27 10:24:02] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-27 10:24:02] [INFO] [Controller] Opening DAQ Task profile: Dev1...
+[2026-07-27 10:24:02] [INFO] [FakeDAQ] Initialised — device=Dev1, channels=[0, 1, 2, 3, 4, 5, 6, 7]
+[2026-07-27 10:24:02] [INFO] [Controller] System Configuration Complete. Hardware Ready.
+[2026-07-27 10:24:03] [INFO] [Controller] Setting voltages to [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

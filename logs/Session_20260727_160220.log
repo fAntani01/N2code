@@ -1,0 +1,26 @@
+[2026-07-27 16:02:20] [INFO] [GUI] Settings loaded from c:\Users\Fabrizio\OneDrive - Politecnico di Milano\Tesi\Neuromorphic\N2\N2 code\settings.json
+[2026-07-27 16:02:24] [INFO] [Controller] Beginning System Setup Initialization
+[2026-07-27 16:02:24] [INFO] [Controller] Connecting to VNA at GPIB0::20::INSTR...
+[2026-07-27 16:02:24] [INFO] [FakeVNA] Connected (fake) at GPIB0::20::INSTR
+[2026-07-27 16:02:24] [INFO] [Controller] Power Supply not connected: port not specified
+[2026-07-27 16:02:24] [INFO] [Controller] Connecting to 3-Axial Field Sensor...
+[2026-07-27 16:02:24] [INFO] [FakeSensor] Initialized mock sensor on configuration port MOCK_PORT
+[2026-07-27 16:02:24] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-27 16:02:24] [INFO] [FakeSensor] Successfully connected to mock field sensor.
+[2026-07-27 16:02:24] [INFO] [Controller] DAQ not connected: device not specified
+[2026-07-27 16:02:24] [INFO] [Controller] System Configuration Complete. Hardware Ready.
+[2026-07-27 16:02:45] [INFO] [Controller] Setup Measurement Parameters
+[2026-07-27 16:02:45] [INFO] [FakeVNA] Sweep configured: 1.000-2.000 GHz, 50 pts, params=['S11']
+[2026-07-27 16:02:45] [INFO] [Controller] Running measure sequence. Saving to: C:/Users/Fabrizio/OneDrive - Politecnico di Milano/Tesi/Neuromorphic/N2/N2 code/test_measurements\Test2
+[2026-07-27 16:02:45] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-27 16:02:45] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [ 0.03090787  1.28002022 -0.43930582]
+[2026-07-27 16:02:46] [INFO] [Saver] Measurement files successfully saved to: C:/Users/Fabrizio/OneDrive - Politecnico di Milano/Tesi/Neuromorphic/N2/N2 code/test_measurements\Test2
+[2026-07-27 16:02:46] [INFO] [GUI] Measurement completed.
+[2026-07-27 16:02:52] [INFO] [Controller] Setup Measurement Parameters
+[2026-07-27 16:02:52] [INFO] [FakeVNA] Sweep configured: 1.000-2.000 GHz, 50 pts, params=['S11']
+[2026-07-27 16:02:52] [INFO] [Controller] Running measure sequence. Saving to: C:/Users/Fabrizio/OneDrive - Politecnico di Milano/Tesi/Neuromorphic/N2/N2 code/test_measurements\Test2
+[2026-07-27 16:02:52] [INFO] [Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).
+[2026-07-27 16:02:52] [INFO] [Controller] Measured 3-Axial Magnetic Vector [mT]: [-0.01070587  1.22698266 -0.46336732]
+[2026-07-27 16:02:53] [INFO] [Saver] Measurement files successfully saved to: C:/Users/Fabrizio/OneDrive - Politecnico di Milano/Tesi/Neuromorphic/N2/N2 code/test_measurements\Test2
+[2026-07-27 16:02:53] [INFO] [GUI] Measurement completed.
+[2026-07-27 16:02:53] [WARNING] [Plot] Measurement 'Test2' already registered in this session, overwriting data.

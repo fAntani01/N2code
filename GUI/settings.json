@@ -1,0 +1,26 @@
+{
+  "settings_input_daq_device": "Dev1",
+  "settings_input_daq_channels": "0, 1, 2, 3, 4, 5, 6, 7",
+  "settings_input_amp_factor": 15.0,
+  "settings_input_vmin": 0.0,
+  "settings_input_vmax": 60.0,
+  "settings_input_ps_port": "COM4",
+  "settings_input_ps_baud": "9600",
+  "settings_input_ps_offset": "2.5797",
+  "settings_input_ps_conversion": "49.917",
+  "settings_input_vna_address": "GPIB0::20::INSTR",
+  "settings_input_vna_cal": "",
+  "cmn_input_folder": "C:/Users/Fabrizio/OneDrive - Politecnico di Milano/Tesi/Neuromorphic/N2/N2 code/test_measurements",
+  "vna_start_freq": 1.0,
+  "vna_stop_freq": 5.0,
+  "vna_bandwidth": 100,
+  "vna_samples": 200,
+  "vna_power": 0,
+  "vna_gate_start": 0,
+  "vna_gate_stop": 0,
+  "field_setpoint": 0.0,
+  "vna_params": [
+    "S21"
+  ],
+  "gating_enabled": false
+}

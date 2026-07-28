@@ -1,0 +1,56 @@
+{
+    "timestamp": "2026-07-28 12:16:00.269",
+    "applied_voltages": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        50.0,
+        0.0,
+        10.0
+    ],
+    "applied_field": null,
+    "measured_field_vector_mt": [
+        -0.028887131125227353,
+        1.2625178707274018,
+        -0.4300413422142739
+    ],
+    "measurement_parameters": {
+        "vna_parameters": [
+            "S21"
+        ],
+        "vna_start_freq": 1000000000.0,
+        "vna_stop_freq": 5000000000.0,
+        "vna_bandwidth": 100,
+        "vna_samples": 200,
+        "vna_power": 0,
+        "gate_start": null,
+        "gate_stop": null,
+        "metadata": {
+            "experiment_type": "GUI measurement"
+        }
+    },
+    "setup_parameters": {
+        "daq_device": "Dev1",
+        "daq_channels": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "daq_vmin": 0.0,
+        "daq_vmax": 60.0,
+        "daq_amp_factor": 15.0,
+        "ps_port": "COM4",
+        "ps_baud": 9600,
+        "ps_offset": 2.5797,
+        "ps_conversion": 49.917,
+        "vna_address": "GPIB0::20::INSTR",
+        "vna_calibration": null
+    }
+}
