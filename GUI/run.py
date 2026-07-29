@@ -22,13 +22,11 @@ import sys
 import json
 import logging
 import numpy as np
-from itertools import chain
 from pathlib import Path
-from PyQt6.QtCore import QObject, QThread, pyqtSignal, QTimer
-from PyQt6.QtWidgets import QApplication, QMainWindow, QRadioButton, QButtonGroup
+from PyQt6.QtCore import QObject, QThread, pyqtSignal, QTimer, QSettings
+from PyQt6.QtWidgets import QApplication, QMainWindow, QRadioButton, QButtonGroup, QCheckBox, QComboBox, QDoubleSpinBox, QLineEdit, QSpinBox
 from PyQt6 import QtCore, uic, QtWidgets
-
-from pathlib import Path
+from PyQt6.QtCore import QProcess
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -129,25 +127,18 @@ class MainWindow(QMainWindow):
     # TrainingSession.run() in un QThread separato.
     search_iteration = pyqtSignal(int, dict)  # (iteration, optimizer_state)
 
+    voltages_updated_signal = pyqtSignal(list)
+
     def __init__(self):
         super().__init__()
         uic.loadUi(UI_PATH, self)
+
+        self._setup_logging()
+
         self.setup_params: Optional[SetupParameters] = None
         self.controller: Optional[MeasurementController] = None
         self.measurement_params: Optional[MeasurementParameters] = None
-        self.plot_manager = PlotManager(
-            single_plot_container=self.single_plot_container,
-            single_trace_control_container=self.single_trace_control_container,
-            train_spectrum_container=self.train_spectrum_container,
-            train_objective_container=self.train_objective_container,
-            train_voltages_container=self.train_voltages_container,
-        )
 
-        # Riquadro di stato del device (MEMS + antenne): cmn_group_overview
-        overview_layout = QtWidgets.QVBoxLayout(self.cmn_group_overview)
-        overview_layout.setContentsMargins(4, 4, 4, 4)
-        self.device_overview = DeviceOverviewWidget()
-        overview_layout.addWidget(self.device_overview)
 
         # Controllo grafico globale log/lineare
         self._scale_log_radio = QRadioButton("Log (dB)")
@@ -181,13 +172,38 @@ class MainWindow(QMainWindow):
         self.search_session: Optional[TrainingSession] = None
 
         # self.voltage_inputs = None #[self.set_voltage_ch0, self.set_voltage_ch1, self.set_voltage_ch2, self.set_voltage_ch3, self.set_voltage_ch4, self.set_voltage_ch5, self.set_voltage_ch6, self.set_voltage_ch7]
+        #self.load_settings()
+        self.settings = QSettings("MyLab", "NeuromorphicApp")
+        self.load_widget_states()
+
         self._populate_voltage_inputs()
+        self._populate_vna_params()
         self._populate_algo_params(self.train_combo_algo.currentText())
         self._populate_objective_combo()
         self._on_objective_changed(self.train_combo_objective.currentText())
 
-        self._setup_logging()
-        self.load_settings()
+
+        self.plot_manager = PlotManager(
+            single_plot_container=self.single_plot_container,
+            single_trace_control_container=self.single_trace_control_container,
+            train_spectrum_container=self.train_spectrum_container,
+            train_objective_container=self.train_objective_container,
+            train_voltages_container=self.train_voltages_container,
+            s_params=self.vna_s_params
+        )
+
+
+        # Riquadro di stato del device (MEMS + antenne): cmn_group_overview
+        overview_layout = QtWidgets.QVBoxLayout(self.cmn_group_overview)
+        overview_layout.setContentsMargins(4, 4, 4, 4)
+        self.device_overview = DeviceOverviewWidget()
+        overview_layout.addWidget(self.device_overview)
+
+        self.voltages_updated_signal.connect(self.update_overview)
+
+        voltages = [0]*len(self.active_channels)
+        self.device_overview.update_state(dict(zip(self.active_channels, voltages)))
+
 
         self.connect_widgets()
 
@@ -219,10 +235,7 @@ class MainWindow(QMainWindow):
         self.search_btn_start_stop.clicked.connect(self.search_start_stop)
         self.search_iteration.connect(self._on_search_iteration_finished)
 
-        # NOTA: aggiungi in Designer due QPushButton "settings_btn_save" e
-        # "settings_btn_load" in tab_settings, per abilitare queste righe.
-        self.btn_settings_save.clicked.connect(self.save_settings)
-        self.btn_settings_load.clicked.connect(self.load_settings)
+        self.btn_settings_apply.clicked.connect(self.save_settings)
 
     # ================================================================
     # GESTIONE STATO GUI
@@ -260,6 +273,7 @@ class MainWindow(QMainWindow):
 
         daq_connected = self.controller is not None and self.controller.daq is not None
         self.btn_set_voltages.setEnabled(is_ready and not is_exclusive_busy and daq_connected)
+        self.btn_reset_voltages.setEnabled(is_ready and not is_exclusive_busy and daq_connected)
 
         # Il campo puo' essere impostato solo se il Power Supply e' stato
         # effettivamente connesso in fase di inizializzazione.
@@ -374,7 +388,46 @@ class MainWindow(QMainWindow):
         self.btn_set_voltages.setObjectName("btn_set_voltages")
         self.btn_set_voltages.clicked.connect(self.set_voltages)
 
-        layout_single.addRow(self.btn_set_voltages)
+        
+        self.btn_reset_voltages = QtWidgets.QPushButton("Reset")
+        self.btn_reset_voltages.setObjectName("btn_reset_voltages")
+        self.btn_reset_voltages.clicked.connect(self.reset_voltages)
+
+        layout_single.addRow(self.btn_reset_voltages, self.btn_set_voltages)
+
+    def _populate_vna_params(self):
+        raw_text = self.settings_input_vna_params.text().strip()
+
+        # Clean formatting brackets and spaces
+        for char in ["[", "]", " "]:
+            raw_text = raw_text.replace(char, "")
+
+        # Parse parameters as strings (e.g., "S11, S21" or "11, 21")
+        if raw_text:
+            self.vna_s_params = [ch for ch in raw_text.split(",") if ch]
+        else:
+            # Fallback to default if empty
+            self.vna_s_params = ["S11", "S21", "S31", "S41"]
+
+        layout_params = self.vna_params_layout
+
+        # Clear previous widgets from the horizontal layout
+        while layout_params.count() > 0:
+            item = layout_params.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        self.vna_param_checkbox = {}
+
+        # Dynamically create and append checkboxes
+        for p in self.vna_s_params:
+            checkbox = QtWidgets.QCheckBox(f"{p}")
+            checkbox.setObjectName(f"vna_param_{p}")
+            self.vna_param_checkbox[p] = checkbox
+
+            # Add to QHBoxLayout
+            layout_params.addWidget(checkbox)
 
     # Automatic training algorithms params setup
     def _populate_algo_params(self, algo_name: str):
@@ -420,7 +473,7 @@ class MainWindow(QMainWindow):
     def _on_objective_changed(self, objective_name: str):
         description = OBJECTIVE_FUNCTIONS.get(objective_name, {}).get("description", "")
         self.train_combo_objective.setToolTip(description)
-        #self.label_7.setText(description)
+        # self.label_7.setText(description)
 
     def get_objective_callable(self) -> Callable:
         """Ritorna la funzione obiettivo selezionata in train_combo_objective,
@@ -486,6 +539,14 @@ class MainWindow(QMainWindow):
         self.controller.set_voltages(voltages)
         self.device_overview.update_state(dict(zip(self.active_channels, voltages)))
 
+    def reset_voltages(self):
+        """Handler per il bottone 'Set Voltages'."""
+        for ch in self.active_channels:
+            self.voltage_inputs[ch].setValue(0)
+        voltages = self.read_measurement_voltages()
+        self.controller.set_voltages(voltages)
+        self.device_overview.update_state(dict(zip(self.active_channels, voltages)))
+
     def read_setup_params(self) -> SetupParameters:
         text = self.settings_input_daq_channels.text()
 
@@ -507,18 +568,16 @@ class MainWindow(QMainWindow):
         )
 
     def _read_vna_parameters(self) -> List[str]:
-        params = []
-        if self.vna_chk_S11.isChecked():
-            params.append("S11")
-        if self.vna_chk_S21.isChecked():
-            params.append("S21")
-        if self.vna_chk_S31.isChecked():
-            params.append("S31")
-        if self.vna_chk_S41.isChecked():
-            params.append("S41")
-        if not params:
+
+        checked_params = []
+
+        for p in self.vna_s_params:
+            if self.vna_param_checkbox[p].isChecked():
+                checked_params.append(p)
+
+        if not checked_params:
             raise ValueError("Select at least one S-parameter to measure.")
-        return params
+        return checked_params
 
     def read_measurement_params(self):
 
@@ -560,6 +619,14 @@ class MainWindow(QMainWindow):
         else:
             self._set_state(AppState.BUSY)
             self._run_async(self.controller.shutdown, on_finished=self._on_shutdown_done, on_error=self._on_operation_error)
+
+    
+        self.controller.on_voltages_changed = self.voltages_updated_signal.emit
+
+    
+    def update_overview(self, voltages: List[float]):
+        self.device_overview.update_state(dict(zip(self.active_channels, voltages)))
+
 
     def _on_init_done(self, _result):
         self.btn_connect_shutdown.setText("Shutdown")
@@ -626,16 +693,16 @@ class MainWindow(QMainWindow):
 
     def _on_measurement_done(self, data):
         logger.info("[GUI] Measurement completed.")
-        self._set_state(AppState.READY)
         self.plot_manager.register_measurement(data, label=self._pending_label, output_folder=Path(self._pending_output_folder).parent)
-        self.device_overview.update_state(dict(zip(self.active_channels, data.applied_voltages)))
-
-
+        self.reset_voltages()
+        self._set_state(AppState.READY)
 
     def _on_measurement_error(self, error_message: str):
         logger.error(f"[GUI] Measurement failed: {error_message}")
         # L'hardware resta inizializzato, torna semplicemente pronto
-        self._set_state(AppState.READY)
+        self.reset_voltages()
+        self.controller_initialize_shutdown()
+        self._set_state(AppState.DISCONNECTED)
 
     # ================================================================
     # TRAINING
@@ -729,6 +796,7 @@ class MainWindow(QMainWindow):
 
     def _on_training_finished(self, _result):
         logger.info("[GUI] Training finished.")
+        self.reset_voltages()
         self._set_state(AppState.READY)
 
     def _on_training_error(self, error_message: str):
@@ -736,7 +804,9 @@ class MainWindow(QMainWindow):
         # eccezione (e la logga), quindi questo ramo scatta solo per
         # errori davvero imprevisti al di fuori del loop stesso.
         logger.error(f"[GUI] Unexpected error while running training: {error_message}")
-        self._set_state(AppState.READY)
+        self.reset_voltages()
+        self.controller_initialize_shutdown()
+        self._set_state(AppState.DISCONNECTED)
 
     def _on_training_iteration_finished(self, iteration: int, score: float, last_data, history: list, optimizer_state: dict):
         """Slot collegato al segnale training_iteration: gira sul thread
@@ -786,7 +856,6 @@ class MainWindow(QMainWindow):
         if not measurement_params.self_check():
             logger.error("[GUI] Invalid measurement parameters, cannot start search.")
             return
-
 
         if os.path.isdir(session_folder):
             reply = QtWidgets.QMessageBox.warning(
@@ -851,12 +920,15 @@ class MainWindow(QMainWindow):
     def _on_search_finished(self, _result):
         logger.info("[GUI] Exhaustive search finished.")
         self.search_status_lbl.setText("Status: Idle")
+        self.reset_voltages()
         self._set_state(AppState.READY)
 
     def _on_search_error(self, error_message: str):
         logger.error(f"[GUI] Unexpected error while running search: {error_message}")
         self.search_status_lbl.setText("Status: Idle")
-        self._set_state(AppState.READY)
+        self.reset_voltages()
+        self.controller_initialize_shutdown()
+        self._set_state(AppState.DISCONNECTED)
 
     def _on_search_iteration_finished(self, iteration: int, optimizer_state: dict):
         """Slot collegato al segnale search_iteration: gira sul thread
@@ -867,104 +939,94 @@ class MainWindow(QMainWindow):
         if self.search_session and self.search_session.history:
             voltages = {int(key[2:]): value for key, value in self.search_session.history[-1]["voltages"].items()}
             self.device_overview.update_state(voltages)
-        
+
         self.search_progress.setValue(int(100 * (iteration + 1) / self._search_n_iterations))
         self.search_status_lbl.setText(f"Status: running ({iteration + 1}/{self._search_n_iterations})")
 
-    # ================================================================
-    # SETTINGS: salvataggio/caricamento su file JSON
-    # ================================================================
-    # widget_name -> "text" (QLineEdit) o "value" (QDoubleSpinBox). Un solo
-    # posto da aggiornare se in futuro aggiungi altri campi in tab_settings.
-    _SETTINGS_FIELDS = {
-        "settings_input_daq_device": "text",
-        "settings_input_daq_channels": "text",
-        "settings_input_amp_factor": "value",
-        "settings_input_vmin": "value",
-        "settings_input_vmax": "value",
-        "settings_input_ps_port": "text",
-        "settings_input_ps_baud": "text",
-        "settings_input_ps_offset": "text",
-        "settings_input_ps_conversion": "text",
-        "settings_input_vna_address": "text",
-        "settings_input_vna_cal": "text",
-    }
-
-    _SAVE_PARAMETERS = {
-        "cmn_input_folder" : "text",
-        "vna_start_freq" : "value",
-        "vna_stop_freq" : "value",
-        "vna_bandwidth" : "value",
-        "vna_samples" : "value",
-        "vna_power" : "value",
-        "vna_gate_start" : "value",
-        "vna_gate_stop" : "value",
-        "field_setpoint" : "value"
-    }
 
     def save_settings(self):
-        # path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save settings", "", "JSON files (*.json)")
 
-        path = os.path.join(os.path.dirname(__file__), "settings.json")
-        if not path:
-            return
-
-        data = {}
-        for widget_name, kind in chain(self._SETTINGS_FIELDS.items(), self._SAVE_PARAMETERS.items()):
-            widget = getattr(self, widget_name)
-            data[widget_name] = widget.value() if kind == "value" else widget.text()
+        QProcess.startDetached(sys.executable, sys.argv)
+        self.close()
 
 
-        data["vna_params"] = self._read_vna_parameters()
-        data["gating_enabled"] = self.vna_grp_gate.isChecked()
+    def get_target_widgets(self):
+        """Define which widgets to persist.
 
-        try:
-            with open(path, "w") as f:
-                json.dump(data, f, indent=2)
-            logger.info(f"[GUI] Settings saved to {path}")
-        except Exception as e:
-            logger.error(f"[GUI] Could not save settings: {e}")
+        You can return an explicit list, or fetch all children of a specific
+        container (e.g., self.settings_grp_vna.findChildren(QWidget))
+        """
+        return [
+            self.cmn_input_folder,
+            self.cmn_input_name,
+            self.vna_start_freq,
+            self.vna_stop_freq,
+            self.vna_bandwidth,
+            self.vna_samples,
+            self.vna_power,
+            self.vna_gate_start,
+            self.vna_gate_stop,
+            self.field_setpoint,
+            self.train_combo_algo,
+            self.train_combo_objective,
+            self.search_input_start,
+            self.search_input_stop,
+            self.search_input_step,
+            self.settings_input_daq_device,
+            self.settings_input_daq_channels,
+            self.settings_input_amp_factor,
+            self.settings_input_vmin,
+            self.settings_input_vmax,
+            self.settings_input_ps_port,
+            self.settings_input_ps_baud,
+            self.settings_input_ps_offset,
+            self.settings_input_ps_conversion,
+            self.settings_input_vna_address,
+            self.settings_input_vna_cal,
+            self.settings_input_vna_params         
 
-    def load_settings(self):
-        # path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Load settings", "", "JSON files (*.json)")
+            # Add any other specific widgets here...
+        ]
 
-        path = os.path.join(os.path.dirname(__file__), "settings.json")
+    def save_widget_states(self):
+        """Saves current state of target widgets to QSettings."""
+        for widget in self.get_target_widgets():
+            name = widget.objectName()
+            if not name:
+                continue
 
-        if not path:
-            return
+            if isinstance(widget, QLineEdit):
+                self.settings.setValue(f"UI/{name}", widget.text())
+            elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                self.settings.setValue(f"UI/{name}", widget.value())
+            elif isinstance(widget, QCheckBox):
+                self.settings.setValue(f"UI/{name}", widget.isChecked())
+            elif isinstance(widget, QComboBox):
+                self.settings.setValue(f"UI/{name}", widget.currentIndex())
 
-        try:
-            with open(path, "r") as f:
-                data = json.load(f)
-        
-            for widget_name, kind in chain(self._SETTINGS_FIELDS.items(), self._SAVE_PARAMETERS.items()):
-                if widget_name not in data:
-                    continue
-                widget = getattr(self, widget_name)
-                if kind == "value":
-                    widget.setValue(data[widget_name])
-                else:
-                    widget.setText(str(data[widget_name]))
+    def load_widget_states(self):
+        """Restores target widgets from QSettings."""
+        for widget in self.get_target_widgets():
+            name = widget.objectName()
+            key = f"UI/{name}"
 
-            params = data["vna_params"]
+            if not name or not self.settings.contains(key):
+                continue
 
-            self.vna_chk_S11.setChecked("S11" in params)
-            self.vna_chk_S21.setChecked("S21" in params)
-            self.vna_chk_S31.setChecked("S31" in params)
-            self.vna_chk_S41.setChecked("S41" in params)
+            val = self.settings.value(key)
 
-            self.vna_grp_gate.setChecked(bool(data["gating_enabled"]))
-
-        except Exception as e:
-            logger.error(f"[GUI] Could not load settings: {e}")
-            return
-
-
-        logger.info(f"[GUI] Settings loaded from {path}")
-        # I pannelli voltaggi/canali di Single Measurement, Training e
-        # Search dipendono da settings_input_daq_channels: ricostruiscili
-        # subito per riflettere eventuali nuovi canali caricati.
-        self._populate_voltage_inputs()
+            if isinstance(widget, QLineEdit):
+                widget.setText(str(val))
+            elif isinstance(widget, QSpinBox):
+                widget.setValue(int(val))
+            elif isinstance(widget, QDoubleSpinBox):
+                widget.setValue(float(val))
+            elif isinstance(widget, QCheckBox):
+                # QSettings converts bools to strings in some backends
+                is_checked = val == True or str(val).lower() == "true"
+                widget.setChecked(is_checked)
+            elif isinstance(widget, QComboBox):
+                widget.setCurrentIndex(int(val))
 
     # ================================================================
     # HELPER: esecuzione asincrona generica
@@ -993,7 +1055,6 @@ class MainWindow(QMainWindow):
 
         thread.start()
 
-
     def closeEvent(self, event):
         """Chiamato automaticamente da Qt alla chiusura della finestra
         (X, Alt+F4, ecc.). Ferma eventuali operazioni in corso e spegne
@@ -1008,8 +1069,8 @@ class MainWindow(QMainWindow):
 
         if self.controller and self.controller.is_initialized:
             self.controller.shutdown()
-            
-        self.save_settings()
+
+        self.save_widget_states()
         event.accept()
 
 

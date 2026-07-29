@@ -28,14 +28,14 @@ from PyQt6.QtWidgets import QWidget
 # TODO: aggiusta i valori (e aggiungi/togli canali) secondo il layout
 # reale e il numero di canali effettivamente cablati.
 MEMS_POSITIONS: Dict[int, Tuple[float, float]] = {
-    0: (0.45, 0.2),
-    1: (0.45, 0.40),
-    2: (0.45, 0.60),
-    3: (0.45, 0.80),
-    4: (0.65, 0.20),
-    5: (0.65, 0.40),
-    6: (0.65, 0.60),
-    7: (0.65, 0.80),
+    0: (0.37, 0.2),
+    1: (0.37, 0.40),
+    2: (0.37, 0.60),
+    3: (0.37, 0.80),
+    4: (0.63, 0.20),
+    5: (0.63, 0.40),
+    6: (0.63, 0.60),
+    7: (0.63, 0.80),
 }
 
 # Posizione + lato di ciascuna antenna/parametro S. "side" determina solo
@@ -50,9 +50,9 @@ TRACE_POSITIONS: Dict[str, dict] = {
 }
 
 _MEMS_COLOR_MIN = QColor(90, 90, 90)  # grigio: voltaggio vicino a 0
-_MEMS_COLOR_MAX = QColor(220, 60, 60)  # rosso: voltaggio al massimo della scala
+_MEMS_COLOR_MAX = QColor(255, 50, 50)  # rosso: voltaggio al massimo della scala
 _ANTENNA_COLOR = QColor(60, 200, 100)  # verde: antenne
-_TEXT_COLOR = QColor(220, 220, 220)
+_TEXT_COLOR = QColor(0, 0, 0)
 
 # Scala (in modulo, V) usata per normalizzare il colore dei MEMS: un
 # voltaggio con |V| >= questo valore e' disegnato al colore massimo

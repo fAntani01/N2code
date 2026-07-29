@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 # Import hardware drivers
 from core.measurement_parameters import MeasurementParameters
@@ -27,6 +27,8 @@ class MeasurementController:
         self.daq: Optional[NI6738] = None
         self.is_initialized = False  # Track whether the controller has been initialized
         self.measurement_params = None
+
+        self.on_voltages_changed: Optional[Callable[[List[float]], None]] = None
 
     def initialize_setup(self, setup_params: SetupParameters):
         """Step 1: Sets up permanent instrument parameters."""
@@ -104,32 +106,11 @@ class MeasurementController:
         """
         logger.info(f"[Controller] Running measure sequence. Saving to: {output_folder}")
 
-        # 1. Update dynamic magnetic field if optionally specified
-        if magnetic_field is not None:
-            if self.ps:
-                logger.info(f"[Controller] Setting dynamic magnetic field target to: {magnetic_field} mT")
-                self.ps.setField(magnetic_field)
-            else:
-                logger.warning("[Controller] Magnetic field update requested, but Power Supply is not initialized!")
-                magnetic_field = None
-        else:
-            logger.info("[Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).")
-
-        # 2. Update dynamic voltages down the DAQ lines
-        if voltages is not None:
-            if len(voltages) != len(self.setup_params.daq_channels):
-                raise ValueError(f"Length of voltages ({len(voltages)}) does not match number of DAQ channels ({len(self.setup_params.daq_channels)}).")
-
-            if self.daq:
-                logger.info("[Controller] Updating voltages")
-                self.daq.set_voltages_array(voltages)
-                time.sleep(0.01)  # Settling buffer delay
-            else: 
-                logger.warning("[Controller] Voltage field update requested, but DAQ is not initialized!")
-                #voltages = [None] * len(self.setup_params.daq_channels)
-
-        # 3. Read 3-Axial Sensor feedback loop TO BE IMPLEMENTED
-        field_vector = self.sensor.read()*1e-3 # mT conversion
+        self.set_field(magnetic_field)
+        self.set_voltages(voltages)
+        time.sleep(0.1)
+       
+        field_vector = self.sensor.read() * 1e-3  # mT conversion
 
         logger.info(f"[Controller] Measured 3-Axial Magnetic Vector [mT]: {field_vector}")
 
@@ -153,7 +134,6 @@ class MeasurementController:
             MeasurementStorage.save_to_folder(output_folder, data_point)
 
         return data_point
-    
 
     def reset(self):
         """Reset all instruments to a safe state."""
@@ -164,24 +144,34 @@ class MeasurementController:
         if self.vna:
             self.vna.preset()
         logger.info("[Controller] Instruments reset complete.")
-        
 
-    def set_field(self, field_value: float):
-            """Sets the magnetic field using the power supply."""
+    def set_field(self, magnetic_field: float):
+        """Sets the magnetic field using the power supply."""
+
+        if magnetic_field is not None:
             if self.ps:
-                logger.info(f"[Controller] Setting magnetic field to {field_value} mT")
-                self.ps.setField(field_value)
+                logger.info(f"[Controller] Setting dynamic magnetic field target to: {magnetic_field} mT")
+                self.ps.setField(magnetic_field)
             else:
-                logger.warning("[Controller] Power Supply not initialized; cannot set field.")
-    
+                logger.warning("[Controller] Magnetic field update requested, but Power Supply is not initialized!")
+                magnetic_field = None
+        else:
+            logger.info("[Controller] No magnetic field explicitly passed; maintaining current state (or controlled externally).")
+
     def set_voltages(self, voltages: List[float]):
         """Sets the voltages on the DAQ channels."""
-        if self.daq:
-            logger.info(f"[Controller] Setting voltages to {voltages}")
-            self.daq.set_voltages_array(voltages)
-        else:
-            logger.warning("[Controller] DAQ not initialized; cannot set voltages.")
+        if voltages is not None:
+            if len(voltages) != len(self.setup_params.daq_channels):
+                raise ValueError(f"Length of voltages ({len(voltages)}) does not match number of DAQ channels ({len(self.setup_params.daq_channels)}).")
 
+            if self.daq:
+                logger.info("[Controller] Updating voltages")
+                self.daq.set_voltages_array(voltages)
+
+                if callable(self.on_voltages_changed):
+                    self.on_voltages_changed(voltages)
+            else: 
+                logger.warning("[Controller] Voltage field update requested, but DAQ is not initialized!")
 
     def shutdown(self):
         """Step 4: Securely drops power tracks, zeros outputs, and clears physical references."""
@@ -189,6 +179,7 @@ class MeasurementController:
 
         if self.daq:
             try:
+                self.set_voltages([0]*len(self.daq.channels))
                 self.daq.close()
             except Exception as e:
                 logger.error(f"[Controller] Error while stopping DAQ tasks: {e}")

@@ -57,7 +57,6 @@ def _trace_color(trace: str, series_index: int) -> QColor:
     return QColor.fromHsl(hue, 200, lightness)
 
 
-_ALL_S_PARAMETERS = ["S11", "S21", "S31", "S41"]
 
 # Quante iterazioni recenti restano sempre visibili negli spettri di
 # Training/Exhaustive Search, oltre alla prima (sempre fissa).
@@ -193,11 +192,12 @@ class PlotManager:
         train_spectrum_container: QWidget,
         train_objective_container: QWidget,
         train_voltages_container: QWidget,
+        s_params: List
     ):
         # Controllo grafico globale: log (dB) o lineare, condiviso da
         # TUTTI i plot di ampiezza (Single Measurement, Training).
         self._scale_mode = SCALE_LOG
-
+        self._ALL_S_PARAMETERS = s_params
         self._init_single_measurement(single_plot_container, single_trace_control_container)
         self._init_train_spectrum(train_spectrum_container)
         self._init_train_objective(train_objective_container)
@@ -249,17 +249,19 @@ class PlotManager:
         scroll_contents = QWidget()
         self._trace_grid = QGridLayout(scroll_contents)
         self._trace_grid.setContentsMargins(4, 4, 4, 4)
+        self._trace_grid.setAlignment(Qt.AlignmentFlag.AlignTop)
+
 
         # Colonne fisse: [(trace, variant), ...]. Ogni misura ha sempre
         # entrambe le varianti disponibili (raw e gated), quindi non
         # serve un controllo di disponibilita' separato da quello sul
         # parametro S stesso (misurato o no).
         self._trace_columns: List[Tuple[str, str]] = []
-        for trace in _ALL_S_PARAMETERS:
+        for trace in self._ALL_S_PARAMETERS:
             self._trace_columns.append((trace, "raw"))
             self._trace_columns.append((trace, "gated"))
 
-        header_labels = ["Measurement"] + [f"{trace} gated" if variant == "gated" else trace for trace, variant in self._trace_columns]
+        header_labels = ["Measurement"] + [f"{trace}g" if variant == "gated" else f"{trace}r" for trace, variant in self._trace_columns]
         for col, text in enumerate(header_labels):
             header = QLabel(f"<b>{text}</b>")
             self._trace_grid.addWidget(header, 0, col)
