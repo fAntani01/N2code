@@ -17,7 +17,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QScrollArea, QCheckBox, QLabel
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QScrollArea, QCheckBox, QLabel, QFrame
 
 from core.measurement_data import MeasurementData
 
@@ -26,17 +26,23 @@ logger = logging.getLogger("MeasurementSystem")
 # ----------------------------------------------------------------------
 # COLORI E STILI
 # ----------------------------------------------------------------------
-# Un hue fisso per parametro S: tutte le tracce di S21, di qualunque
-# misura/iterazione, condividono la stessa tonalita' di base. La "shade"
-# (luminosita') distingue invece misure/iterazioni diverse dello stesso
-# parametro: la prima e' la piu' scura, le successive via via piu'
-# chiare, riciclando se ce ne sono piu' di quante shade definite.
-_S_PARAM_HUES = {"S11": 210, "S21": 30, "S31": 130, "S41": 0}  # blu, arancio, verde, rosso
-# 6 valori: indice 0 riservato alla prima iterazione (fissa), indici 1..5
-# usati per le 5 posizioni della finestra scorrevole (piu' vecchia ->
-# piu' recente). Con esattamente una shade per posizione, le tracce
-# mostrate contemporaneamente sono sempre ben distinguibili tra loro.
-_SHADE_LIGHTNESS = [90, 115, 140, 165, 190, 215]  # scuro -> chiaro, scala 0-255 di QColor.fromHsl
+# Un hue per parametro S, assegnato in base alla sua POSIZIONE
+# nell'elenco configurato (self._ALL_S_PARAMETERS), non al nome: cosi'
+# funziona con qualunque insieme di parametri scelto dall'utente in
+# Settings, non solo S11/S21/S31/S41. Gli hue sono equidistanti sul
+# NUMERO ATTUALE di parametri configurati (non su uno slot massimo
+# fisso): con pochi parametri la spaziatura si allarga per massimizzare
+# la distanza di colore tra le tracce. Contropartita: se aggiungi/togli
+# un parametro in Settings, gli hue di TUTTI i parametri si
+# ridistribuiscono (non restano stabili per posizione).
+#
+# La "shade" (luminosita') distingue invece misure/iterazioni diverse
+# dello stesso parametro: equidistante sul numero di serie ATTUALMENTE
+# VISIBILI (misure spuntate nel trace control, o iterazioni mostrate nel
+# plot spettro di Training) — con poche serie visibili, la spaziatura si
+# allarga per lo stesso motivo.
+_LIGHTNESS_MIN = 90   # scuro
+_LIGHTNESS_MAX = 215  # chiaro
 
 # Palette qualitativa "classica", per curve che non sono parametri S
 # (objective, voltaggi per canale in Training).
@@ -51,9 +57,39 @@ _LINESTYLE_RAW = Qt.PenStyle.SolidLine
 _LINESTYLE_GATED = Qt.PenStyle.DashLine
 
 
-def _trace_color(trace: str, series_index: int) -> QColor:
-    hue = _S_PARAM_HUES.get(trace, 0)
-    lightness = _SHADE_LIGHTNESS[series_index % len(_SHADE_LIGHTNESS)]
+def _hue_for_position(index: int, total: int) -> int:
+    """Hue (0-360) equidistante per la posizione index tra 'total'
+    parametri S attualmente configurati. index/total (non index/(total-1)):
+    la ruota dei colori e' ciclica, 360 equivale a 0, quindi l'ultimo
+    parametro non deve mai raggiungere lo stesso hue del primo."""
+    if total <= 0:
+        return 0
+    return round(360 * index / total) % 360
+
+
+def _lightness_for_position(index: int, total: int) -> int:
+    """Luminosita' equidistante tra _LIGHTNESS_MIN e _LIGHTNESS_MAX per
+    la posizione index tra 'total' serie attualmente visibili. index/
+    (total-1): qui la scala e' lineare (non ciclica), quindi si vogliono
+    toccare entrambi gli estremi per usare tutto il range disponibile."""
+    if total <= 1:
+        return _LIGHTNESS_MIN
+    return round(_LIGHTNESS_MIN + (index / (total - 1)) * (_LIGHTNESS_MAX - _LIGHTNESS_MIN))
+
+
+def _trace_color(trace: str, series_index: int, series_total: int, s_params_order: List[str]) -> QColor:
+    """s_params_order: l'elenco configurato dei parametri S (self.
+    _ALL_S_PARAMETERS), nell'ordine scelto dall'utente in Settings — la
+    posizione di trace in questa lista determina l'hue. series_total: il
+    numero di misure/iterazioni ATTUALMENTE VISIBILI (non il totale mai
+    registrato) — determina quanto si allarga la scala di luminosita'.
+    """
+    try:
+        param_index = s_params_order.index(trace)
+    except ValueError:
+        param_index = 0
+    hue = _hue_for_position(param_index, len(s_params_order))
+    lightness = _lightness_for_position(series_index, series_total)
     return QColor.fromHsl(hue, 200, lightness)
 
 
@@ -119,10 +155,11 @@ class _SpectrumPanel:
     (vedi il filtro per algoritmo in TRAINING_SPECTRUM_FILTERS).
     """
 
-    def __init__(self, plot_widget: pg.PlotWidget, legend: pg.LegendItem, magnitude_fn: Callable[[np.ndarray], np.ndarray]):
+    def __init__(self, plot_widget: pg.PlotWidget, legend: pg.LegendItem, magnitude_fn: Callable[[np.ndarray], np.ndarray], s_params_order: List[str]):
         self.plot_widget = plot_widget
         self.legend = legend
         self._magnitude_fn = magnitude_fn  # bound method di PlotManager: legge sempre la scala corrente
+        self._s_params_order = s_params_order  # riferimento condiviso a PlotManager._ALL_S_PARAMETERS
         self.reset()
 
     def reset(self):
@@ -149,25 +186,28 @@ class _SpectrumPanel:
         """Ridisegna tutto cio' che e' attualmente visibile: la prima
         iterazione (shade fissa, indice 0) e le tracce della finestra
         scorrevole, con la shade calcolata dalla loro POSIZIONE CORRENTE
-        nella finestra (indice 1 = piu' vecchia visibile, ... 5 = piu'
-        recente) — non da un contatore che continua a crescere. Cosi' le
-        tracce mostrate hanno sempre shade ben distinte tra loro, anche a
-        finestra piena, invece di convergere tutte sulla stessa shade
-        "stabile". Va richiamato ogni volta che cambia cosa e' visibile
-        (nuova iterazione, o cambio scala log/lineare).
+        nella finestra (indice 1 = piu' vecchia visibile, ...) — non da
+        un contatore che continua a crescere. series_total = numero di
+        serie attualmente visibili (prima + finestra), cosi' la scala di
+        luminosita' si allarga quando ce ne sono poche invece di
+        occupare sempre lo stesso range fisso. Va richiamato ogni volta
+        che cambia cosa e' visibile (nuova iterazione, o cambio scala
+        log/lineare).
         """
         self.plot_widget.clear()
         self.legend.clear()
 
+        series_total = (1 if 0 in self._entries else 0) + len(self._rolling)
+
         if 0 in self._entries:
             entry = self._entries[0]
-            entry["curves"] = self._draw(0, entry["data"], shade_index=0)
+            entry["curves"] = self._draw(0, entry["data"], shade_index=0, series_total=series_total)
 
         for position, iteration in enumerate(self._rolling):
             entry = self._entries[iteration]
-            entry["curves"] = self._draw(iteration, entry["data"], shade_index=1 + position)
+            entry["curves"] = self._draw(iteration, entry["data"], shade_index=1 + position, series_total=series_total)
 
-    def _draw(self, iteration: int, data: MeasurementData, shade_index: int) -> list:
+    def _draw(self, iteration: int, data: MeasurementData, shade_index: int, series_total: int) -> list:
         curves = []
         for trace in data.measurement_parameters.vna_parameters:
             if trace not in data.vna_results:
@@ -176,7 +216,7 @@ class _SpectrumPanel:
             magnitude = self._magnitude_fn(data.vna_results[trace])
             curve = self.plot_widget.plot(
                 data.freq_axis, magnitude,
-                pen=pg.mkPen(color=_trace_color(trace, shade_index), width=2),
+                pen=pg.mkPen(color=_trace_color(trace, shade_index, series_total, self._s_params_order), width=2),
                 name=f"iter {iteration} - {trace}",
             )
             curves.append(curve)
@@ -261,18 +301,31 @@ class PlotManager:
             self._trace_columns.append((trace, "raw"))
             self._trace_columns.append((trace, "gated"))
 
+        # La tabella e' costruita su una griglia "doppia": le colonne/righe
+        # di CONTENUTO occupano gli indici pari (0, 2, 4, ...), quelle
+        # dispari ospitano le linee separatrici (QFrame VLine/HLine). Cosi'
+        # ogni riga/colonna di contenuto ha sempre una linea tra se' e la
+        # successiva, senza dover gestire rowSpan dinamici che crescono ad
+        # ogni nuova misura registrata.
+        self._trace_col_count = 1 + len(self._trace_columns)  # "Measurement" + una per (trace, variant)
+        self._grid_total_cols = 2 * self._trace_col_count - 1  # colonne di griglia totali (contenuto + separatori)
+
         header_labels = ["Measurement"] + [f"{trace}g" if variant == "gated" else f"{trace}r" for trace, variant in self._trace_columns]
-        for col, text in enumerate(header_labels):
+        for i, text in enumerate(header_labels):
             header = QLabel(f"<b>{text}</b>")
-            self._trace_grid.addWidget(header, 0, col)
+            self._trace_grid.addWidget(header, 0, 2 * i)
+        self._add_vertical_separators(grid_row=0)
+        self._add_horizontal_separator(grid_row=1)
 
         scroll.setWidget(scroll_contents)
         layout.addWidget(scroll)
 
-        # Prossima riga libera nella griglia (riga 0 = header, quindi si
-        # parte da 1). Le righe non vengono mai rimosse singolarmente,
-        # solo tutte insieme da clear_session().
-        self._next_trace_row = 1
+        # Prossima riga di griglia libera per una nuova misura (riga 0 =
+        # header, riga 1 = separatore orizzontale sotto l'header). Ogni
+        # misura occupa 2 righe di griglia (contenuto + separatore sotto),
+        # vedi _build_trace_row. Le righe non vengono mai rimosse
+        # singolarmente, solo tutte insieme da clear_session().
+        self._next_trace_row = 2
 
         # Cartella della sessione correntemente mostrata nel trace control.
         # Quando cambia, la sessione precedente viene azzerata.
@@ -280,6 +333,29 @@ class PlotManager:
 
         # label -> {"data", "row_widgets", "row_checkbox", "trace_checkboxes"}
         self._measurements: Dict[str, dict] = {}
+
+    def _add_vertical_separators(self, grid_row: int) -> List[QFrame]:
+        """Linee verticali tra le colonne di contenuto, per la riga di
+        griglia grid_row. Vanno aggiunte ad OGNI riga (header e ogni
+        misura), non una sola volta con un rowSpan esteso: le righe
+        successive non esistono ancora al momento della creazione."""
+        separators = []
+        for i in range(1, self._trace_col_count):
+            sep = QFrame()
+            sep.setFrameShape(QFrame.Shape.VLine)
+            sep.setFrameShadow(QFrame.Shadow.Sunken)
+            self._trace_grid.addWidget(sep, grid_row, 2 * i - 1)
+            separators.append(sep)
+        return separators
+
+    def _add_horizontal_separator(self, grid_row: int) -> QFrame:
+        """Linea orizzontale larga quanto l'intera tabella, alla riga di
+        griglia grid_row."""
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        self._trace_grid.addWidget(sep, grid_row, 0, 1, self._grid_total_cols)
+        return sep
 
     def register_measurement(self, measurement_data, label: str, output_folder: Optional[str] = None):
         """Registra una misura appena eseguita: aggiunge una riga alla
@@ -320,21 +396,22 @@ class PlotManager:
         """Crea una riga della tabella: checkbox nome misura in colonna 0,
         una checkbox per ognuna delle varianti (trace, raw/gated) nelle
         colonne successive (sempre presenti, ma abilitate solo se il
-        parametro S e' stato davvero misurato). Ogni toggle ricalcola
-        l'intero plot.
+        parametro S e' stato davvero misurato), con linee separatrici
+        verticali tra le colonne e una orizzontale sotto la riga. Ogni
+        toggle ricalcola l'intero plot.
         """
-        row = self._next_trace_row
-        self._next_trace_row += 1
+        grid_row = self._next_trace_row
+        self._next_trace_row += 2  # riga di contenuto + riga di separatore sotto
         row_widgets = []
 
         row_checkbox = QCheckBox(label)
         row_checkbox.setChecked(True)
         row_checkbox.toggled.connect(self._refresh_single_plot)
-        self._trace_grid.addWidget(row_checkbox, row, 0)
+        self._trace_grid.addWidget(row_checkbox, grid_row, 0)
         row_widgets.append(row_checkbox)
 
         trace_checkboxes: Dict[Tuple[str, str], QCheckBox] = {}
-        for col, (trace, variant) in enumerate(self._trace_columns, start=1):
+        for i, (trace, variant) in enumerate(self._trace_columns, start=1):
             cb = QCheckBox()
             is_measured = trace in measured_traces
             cb.setEnabled(is_measured)
@@ -343,9 +420,12 @@ class PlotManager:
             # raddoppiare subito il numero di curve visibili.
             cb.setChecked(is_measured and variant == "raw")
             cb.toggled.connect(self._refresh_single_plot)
-            self._trace_grid.addWidget(cb, row, col)
+            self._trace_grid.addWidget(cb, grid_row, 2 * i)
             row_widgets.append(cb)
             trace_checkboxes[(trace, variant)] = cb
+
+        row_widgets.extend(self._add_vertical_separators(grid_row))
+        row_widgets.append(self._add_horizontal_separator(grid_row + 1))
 
         return row_widgets, row_checkbox, trace_checkboxes
 
@@ -353,14 +433,18 @@ class PlotManager:
         """Ridisegna lo spettro da zero secondo lo stato corrente delle
         checkbox. *_args assorbe l'argomento bool che QCheckBox.toggled
         passa al callback, che qui non serve.
+
+        series_total = numero di misure ATTUALMENTE SPUNTATE (non il
+        totale registrato in sessione): con poche misure visibili la
+        scala di luminosita' si allarga per massimizzare il contrasto.
         """
         self.single_plot_widget.clear()
         self.single_legend.clear()
 
-        for series_index, (label, entry) in enumerate(self._measurements.items()):
-            if not entry["row_checkbox"].isChecked():
-                continue
+        visible_measurements = [(label, entry) for label, entry in self._measurements.items() if entry["row_checkbox"].isChecked()]
+        series_total = len(visible_measurements)
 
+        for series_index, (label, entry) in enumerate(visible_measurements):
             data = entry["data"]
             freq_axis = data.freq_axis
 
@@ -379,7 +463,7 @@ class PlotManager:
                 suffix = " (gated)" if variant == "gated" else ""
                 self.single_plot_widget.plot(
                     freq_axis, magnitude,
-                    pen=pg.mkPen(color=_trace_color(trace, series_index), width=2, style=style),
+                    pen=pg.mkPen(color=_trace_color(trace, series_index, series_total, self._ALL_S_PARAMETERS), width=2, style=style),
                     name=f"{label} - {trace}{suffix}",
                 )
 
@@ -390,7 +474,7 @@ class PlotManager:
             for widget in entry["row_widgets"]:
                 widget.deleteLater()
         self._measurements.clear()
-        self._next_trace_row = 1
+        self._next_trace_row = 2
 
         self.single_plot_widget.clear()
         self.single_legend.clear()
@@ -411,7 +495,10 @@ class PlotManager:
     def _init_train_spectrum(self, container: QWidget):
         self.train_spectrum_widget, self.train_spectrum_legend = _make_frequency_plot(container)
         self.train_spectrum_widget.setLabel("left", "Magnitude", units="dB")
-        self._train_spectrum_panel = _SpectrumPanel(self.train_spectrum_widget, self.train_spectrum_legend, magnitude_fn=self._magnitude)
+        self._train_spectrum_panel = _SpectrumPanel(
+            self.train_spectrum_widget, self.train_spectrum_legend,
+            magnitude_fn=self._magnitude, s_params_order=self._ALL_S_PARAMETERS,
+        )
 
     def _init_train_objective(self, container: QWidget):
         layout = QVBoxLayout(container)

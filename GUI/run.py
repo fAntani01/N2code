@@ -31,7 +31,7 @@ from PyQt6.QtCore import QProcess
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.storage import setup_logger
-from core.controller_fake import MeasurementController
+from core.controller import MeasurementController
 from core.measurement_parameters import MeasurementParameters
 from core.setup_parameters import SetupParameters  # adatta il path all'import reale
 from plot_manager import PlotManager, SCALE_LOG, SCALE_LINEAR
@@ -488,7 +488,7 @@ class MainWindow(QMainWindow):
         if daq_connected:
             return [self.voltage_inputs[ch].value() for ch in self.active_channels]
         else:
-            return None
+            return [0]*len(self.active_channels)
 
     def read_inital_voltages(self) -> List[float]:
 
